@@ -39,12 +39,36 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   loading?: boolean;
-  loadingText?:string
+  loadingText?: string;
 }
-
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, loading,loadingText, ...props }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      asChild = false,
+      loading,
+      loadingText,
+      ...props
+    },
+    ref,
+  ) => {
+    const [isLoading, setIsLoading] = React.useState<boolean | undefined>(
+      undefined, // Start with undefined to avoid hydration mismatch
+    );
+
+    React.useEffect(() => {
+      setIsLoading(loading);
+    }, [loading]);
+
     const Comp = asChild ? Slot : "button";
+
+    // Handle the case where `isLoading` is undefined (before mounting)
+    if (isLoading === undefined) {
+      return null; // Return null or a loading placeholder until client-side hydration
+    }
+
     return (
       <Comp
         className={cn(
@@ -55,11 +79,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={loading}
         {...props}
       >
-        {loading ? (
-        <>{loadingText??"Loading"}</>
-        ) : (
-          props.children
-        )}
+        {isLoading ? <>{loadingText ?? "Loading"}</> : props.children}
       </Comp>
     );
   },
